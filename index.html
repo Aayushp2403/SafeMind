@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SafeMind | Mental Well-Being for Teens</title>
+    <meta
+      name="description"
+      content="SafeMind is a teen-friendly mental well-being website designed to help adolescents learn, check in with themselves, and find support without judgment."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;family=Newsreader:opsz,wght@6..72,400;6..72,600&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand" href="#top" aria-label="SafeMind home">
+          <span class="brand-mark">S</span>
+          <span class="brand-copy">
+            <strong>SafeMind</strong>
+            <small>Mental Well-Being</small>
+          </span>
+        </a>
+
+        <nav class="site-nav" aria-label="Primary">
+          <a href="#support">Support</a>
+          <a href="#learn">Learn</a>
+          <a href="#adults">Trusted Adults</a>
+          <a href="#team">Team</a>
+          <a href="#urgent">Urgent Help</a>
+        </nav>
+
+        <a class="button button-small button-ghost" href="#check-in">Start Here</a>
+      </header>
+
+      <main id="top">
+        <section class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow">A calmer place to begin</p>
+            <h1>You should not need perfect words to ask for help.</h1>
+            <p class="hero-text">
+              SafeMind is designed to support adolescent mental health with a
+              private-feeling, welcoming space to learn about emotions, understand
+              what you are going through, and find help without extra pressure.
+            </p>
+            <div class="hero-actions">
+              <a class="button" href="#support">Explore Support</a>
+              <a class="button button-ghost" href="#urgent">Get Help Now</a>
+            </div>
+            <ul class="hero-points" aria-label="SafeMind highlights">
+              <li>Teen-friendly language</li>
+              <li>Practical next steps</li>
+              <li>No judgment, no pressure</li>
+            </ul>
+          </div>
+
+          <aside class="checkin-card reveal" id="check-in">
+            <p class="card-kicker">Daily check-in</p>
+            <h2>What feels closest to today?</h2>
+            <p>
+              Pick the word that matches your mood. SafeMind will suggest a gentle
+              next step.
+            </p>
+
+            <div class="mood-grid" role="group" aria-label="Mood selector">
+              <button class="mood-pill is-active" data-mood="overwhelmed">Overwhelmed</button>
+              <button class="mood-pill" data-mood="anxious">Anxious</button>
+              <button class="mood-pill" data-mood="sad">Sad</button>
+              <button class="mood-pill" data-mood="numb">Numb</button>
+              <button class="mood-pill" data-mood="stressed">Stressed</button>
+              <button class="mood-pill" data-mood="unsure">Not Sure</button>
+            </div>
+
+            <div class="response-panel" aria-live="polite">
+              <p class="response-label">Suggested next step</p>
+              <p id="mood-response">
+                Pause for one minute. Unclench your jaw, drop your shoulders, and
+                choose just one person or tool that feels safest right now.
+              </p>
+            </div>
+          </aside>
+        </section>
+
+        <section class="statement reveal">
+          <p>
+            Many teens stay silent because talking to a parent, teacher, or counselor
+            can feel uncomfortable. SafeMind helps make that first step smaller.
+          </p>
+        </section>
+
+        <section class="info-grid" id="support">
+          <div class="section-heading reveal">
+            <p class="eyebrow">How SafeMind Helps</p>
+            <h2>Support that meets you where you are</h2>
+          </div>
+
+          <article class="feature-card reveal">
+            <span class="feature-number">01</span>
+            <h3>Check in without pressure</h3>
+            <p>
+              Start with what you feel, even if it is messy or hard to explain. A
+              small check-in can make things feel more understandable.
+            </p>
+          </article>
+
+          <article class="feature-card reveal">
+            <span class="feature-number">02</span>
+            <h3>Learn what your mind is carrying</h3>
+            <p>
+              Explore topics like stress, anxiety, burnout, and self-worth using
+              simple language built for teens, not textbooks.
+            </p>
+          </article>
+
+          <article class="feature-card reveal">
+            <span class="feature-number">03</span>
+            <h3>Find a safer path to support</h3>
+            <p>
+              When you feel ready, SafeMind helps you identify a trusted adult,
+              prepare what to say, and reach out one step at a time.
+            </p>
+          </article>
+        </section>
+
+        <section class="paths-section" id="learn">
+          <div class="section-heading reveal">
+            <p class="eyebrow">Explore What You Need</p>
+            <h2>Common feelings, clear starting points</h2>
+          </div>
+
+          <div class="path-grid">
+            <article class="path-card reveal">
+              <h3>Stress and pressure</h3>
+              <p>
+                When school, family, sports, and expectations pile up, your mind can
+                stay stuck in survival mode.
+              </p>
+              <span>Start with: breathing, scheduling breaks, reducing overload</span>
+            </article>
+
+            <article class="path-card reveal">
+              <h3>Anxiety and overthinking</h3>
+              <p>
+                If your thoughts race or your body feels on edge, you may need tools
+                that help you slow things down safely.
+              </p>
+              <span>Start with: grounding, body signals, calming routines</span>
+            </article>
+
+            <article class="path-card reveal">
+              <h3>Sadness and isolation</h3>
+              <p>
+                Feeling low or disconnected does not make you weak. It often means
+                you have been carrying too much on your own.
+              </p>
+              <span>Start with: connection, rest, noticing patterns, asking for support</span>
+            </article>
+
+            <article class="path-card reveal accent-card">
+              <h3>Crisis moments</h3>
+              <p>
+                If it feels hard to stay safe, the next step is not figuring
+                everything out alone. The next step is getting immediate help.
+              </p>
+              <a href="#urgent">Go to urgent support</a>
+            </article>
+          </div>
+        </section>
+
+        <section class="urgent-section reveal" id="urgent">
+          <div class="urgent-copy">
+            <p class="eyebrow">Urgent Support</p>
+            <h2>If you might hurt yourself or you feel unsafe, reach out now.</h2>
+            <p>
+              For people in the United States, the <strong>988 Suicide &amp; Crisis Lifeline</strong>
+              offers free, confidential support by call, text, or chat, 24/7. If
+              there is immediate danger, call <strong>911</strong> right away.
+            </p>
+          </div>
+
+          <div class="urgent-actions">
+            <a class="button button-light" href="https://988lifeline.org/get-help/" target="_blank" rel="noreferrer">
+              Contact 988
+            </a>
+            <a class="button button-ghost-light" href="https://988lifeline.org/chat/" target="_blank" rel="noreferrer">
+              Open 988 Chat
+            </a>
+          </div>
+        </section>
+
+        <section class="adults-section" id="adults">
+          <div class="section-heading reveal">
+            <p class="eyebrow">Trusted Adults</p>
+            <h2>You do not have to explain everything at once</h2>
+          </div>
+
+          <div class="timeline">
+            <article class="timeline-step reveal">
+              <span>Step 1</span>
+              <h3>Choose one safe person</h3>
+              <p>
+                This could be a parent, teacher, school counselor, coach, older
+                sibling, or another adult who listens well.
+              </p>
+            </article>
+
+            <article class="timeline-step reveal">
+              <span>Step 2</span>
+              <h3>Keep your message simple</h3>
+              <p>
+                Try: “I have not been feeling like myself lately, and I think I need
+                support.”
+              </p>
+            </article>
+
+            <article class="timeline-step reveal">
+              <span>Step 3</span>
+              <h3>Ask for one next action</h3>
+              <p>
+                You can ask them to sit with you, help you find a counselor, or stay
+                with you while you make a call.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="team-section" id="team">
+          <div class="section-heading reveal">
+            <p class="eyebrow">Team Members</p>
+            <h2>The people behind SafeMind</h2>
+          </div>
+
+          <div class="team-grid">
+            <article class="team-card reveal">
+              <div class="team-avatar avatar-anaya" aria-hidden="true">AP</div>
+              <div class="team-copy">
+                <h3>Anaya P. <span class="team-role">(Team Lead)</span></h3>
+                <p>Michigan, United States</p>
+              </div>
+            </article>
+
+            <article class="team-card reveal">
+              <div class="team-avatar avatar-chedhe" aria-hidden="true">CK</div>
+              <div class="team-copy">
+                <h3>chedhe K.</h3>
+                <p>North Africa, Tunisia</p>
+              </div>
+            </article>
+
+            <article class="team-card reveal">
+              <div class="team-avatar avatar-adiv" aria-hidden="true">AP</div>
+              <div class="team-copy">
+                <h3>Adiv P.</h3>
+                <p>Michigan, United States</p>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="faq-section">
+          <div class="section-heading reveal">
+            <p class="eyebrow">Questions You Might Have</p>
+            <h2>Starting small still counts</h2>
+          </div>
+
+          <div class="faq-list">
+            <article class="faq-item reveal">
+              <h3>What if I do not know exactly what I feel?</h3>
+              <p>
+                That is okay. You can start with “something feels off” and work from
+                there. Clarity often comes after support, not before it.
+              </p>
+            </article>
+
+            <article class="faq-item reveal">
+              <h3>What if I am scared to tell my parents?</h3>
+              <p>
+                SafeMind encourages finding the safest trusted adult available. A
+                school counselor, teacher, or coach can help you think through the
+                next conversation.
+              </p>
+            </article>
+
+            <article class="faq-item reveal">
+              <h3>Is SafeMind a replacement for therapy or emergency care?</h3>
+              <p>
+                No. SafeMind is a supportive starting point. It does not replace a
+                licensed mental health professional or emergency services.
+              </p>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div>
+          <strong>SafeMind</strong>
+          <p>
+            A supportive mental well-being concept for teens who need a safer first
+            step.
+          </p>
+        </div>
+        <p class="footer-note">
+          If this is an emergency, call 911. For U.S. emotional crisis support, call
+          or text 988 or visit
+          <a href="https://988lifeline.org/get-help/" target="_blank" rel="noreferrer">988lifeline.org</a>.
+        </p>
+        <p class="footer-note">&copy; <span id="year"></span> SafeMind</p>
+      </footer>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
