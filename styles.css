@@ -31,6 +31,7 @@ body {
   margin: 0;
   font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
   color: var(--text);
+  overflow-x: hidden;
   background:
     radial-gradient(circle at top left, rgba(242, 107, 91, 0.16), transparent 28%),
     radial-gradient(circle at top right, rgba(29, 53, 87, 0.14), transparent 24%),
@@ -58,7 +59,7 @@ a {
 }
 
 .page-shell {
-  width: min(calc(100% - 2rem), var(--max-width));
+  width: min(calc(100% - clamp(1rem, 3vw, 2rem)), var(--max-width));
   margin: 0 auto;
   position: relative;
 }
@@ -73,6 +74,7 @@ a {
   top: 0;
   z-index: 10;
   backdrop-filter: blur(14px);
+  padding-inline: 0.1rem;
 }
 
 .site-header::before {
@@ -128,6 +130,12 @@ a {
   display: inline-flex;
   gap: 1.5rem;
   font-size: 0.95rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.site-nav a {
+  padding: 0.35rem 0;
 }
 
 .site-nav a:hover,
@@ -185,6 +193,12 @@ a {
   gap: 2rem;
   padding: 5rem 0 3rem;
   align-items: center;
+}
+
+.hero-copy,
+.urgent-copy,
+.team-copy {
+  min-width: 0;
 }
 
 .eyebrow,
@@ -368,7 +382,8 @@ h3 {
 .feature-card,
 .path-card,
 .timeline-step,
-.faq-item {
+.faq-item,
+.team-card {
   padding: 1.5rem;
   border-radius: var(--radius-lg);
 }
@@ -397,6 +412,7 @@ h3 {
   margin-top: 1rem;
   font-weight: 600;
   color: var(--bg-deep);
+  line-height: 1.55;
 }
 
 .accent-card {
@@ -433,6 +449,7 @@ h3 {
 
 .urgent-copy p {
   color: rgba(255, 255, 255, 0.82);
+  line-height: 1.7;
 }
 
 .urgent-actions {
@@ -456,7 +473,6 @@ h3 {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1.4rem;
   border-radius: var(--radius-lg);
   border: 1px solid var(--line);
   background: var(--surface);
@@ -496,13 +512,16 @@ h3 {
 
 .team-copy h3 {
   color: #0ca4b8;
-  font-size: 1.9rem;
+  font-size: clamp(1.35rem, 2.2vw, 1.9rem);
+  line-height: 1.15;
+  text-wrap: balance;
 }
 
 .team-copy p {
   margin: 0;
   color: var(--text-soft);
   font-size: 1.05rem;
+  line-height: 1.55;
 }
 
 .team-role {
@@ -541,19 +560,25 @@ h3 {
   transform: translateY(0);
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1120px) {
   .site-header {
     flex-wrap: wrap;
     justify-content: center;
+    gap: 0.9rem 1.25rem;
   }
 
   .site-nav {
     order: 3;
     width: 100%;
-    justify-content: center;
-    flex-wrap: wrap;
   }
 
+  .hero {
+    gap: 1.5rem;
+    padding-top: 4rem;
+  }
+}
+
+@media (max-width: 960px) {
   .hero,
   .urgent-section,
   .timeline,
@@ -564,18 +589,78 @@ h3 {
     grid-template-columns: 1fr;
   }
 
+  .checkin-card,
+  .feature-card,
+  .path-card,
+  .timeline-step,
+  .faq-item,
+  .team-card,
+  .urgent-section,
+  .statement {
+    padding: 1.35rem;
+  }
+
   .urgent-actions {
     justify-content: flex-start;
   }
 }
 
-@media (max-width: 640px) {
-  .page-shell {
-    width: min(calc(100% - 1.25rem), var(--max-width));
+@media (max-width: 768px) {
+  .site-header {
+    padding-top: 0.9rem;
   }
 
+  .site-header::before {
+    inset: 0 -0.75rem;
+  }
+
+  .brand {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .site-nav {
+    gap: 0.65rem;
+  }
+
+  .site-nav a {
+    padding: 0.55rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(255, 250, 244, 0.82);
+    border: 1px solid rgba(31, 41, 51, 0.08);
+    font-size: 0.92rem;
+  }
+
+  .site-header > .button-small {
+    width: 100%;
+  }
+
+  .hero {
+    padding-top: 3rem;
+    gap: 1.25rem;
+  }
+
+  .statement,
+  .info-grid,
+  .paths-section,
+  .adults-section,
+  .team-section,
+  .faq-section {
+    padding-bottom: 4rem;
+  }
+
+  .urgent-section {
+    margin-bottom: 4rem;
+  }
+}
+
+@media (max-width: 640px) {
   h1 {
     font-size: clamp(2.6rem, 15vw, 4rem);
+  }
+
+  h2 {
+    font-size: clamp(1.85rem, 9vw, 2.6rem);
   }
 
   .hero {
@@ -598,8 +683,61 @@ h3 {
     width: 100%;
   }
 
+  .team-card {
+    align-items: flex-start;
+  }
+
+  .team-avatar {
+    width: 4.25rem;
+    height: 4.25rem;
+    font-size: 1.1rem;
+  }
+
+  .team-copy h3 {
+    font-size: 1.35rem;
+  }
+
+  .team-copy p {
+    font-size: 1rem;
+  }
+
   .statement {
     margin-bottom: 3.5rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .site-nav {
+    gap: 0.5rem;
+  }
+
+  .site-nav a {
+    width: calc(50% - 0.25rem);
+    text-align: center;
+  }
+
+  .brand-copy strong {
+    font-size: 0.95rem;
+  }
+
+  .brand-copy small {
+    font-size: 0.82rem;
+  }
+
+  .hero-points li {
+    width: 100%;
+    text-align: center;
+  }
+
+  .checkin-card,
+  .feature-card,
+  .path-card,
+  .timeline-step,
+  .faq-item,
+  .team-card,
+  .urgent-section,
+  .statement {
+    padding: 1.1rem;
   }
 }
 
