@@ -118,6 +118,10 @@ a {
 .section-heading p,
 .feature-card p,
 .path-card p,
+.condition-subtitle,
+.condition-excerpt,
+.condition-page-section p,
+.condition-page-note p,
 .timeline-step p,
 .faq-item p,
 .footer-note,
@@ -270,6 +274,9 @@ h3 {
 .checkin-card,
 .feature-card,
 .path-card,
+.condition-card,
+.condition-page-section,
+.condition-page-note,
 .timeline-step,
 .faq-item,
 .statement {
@@ -354,6 +361,7 @@ h3 {
 
 .info-grid,
 .paths-section,
+.conditions-section,
 .adults-section,
 .team-section,
 .faq-section {
@@ -396,6 +404,7 @@ h3 {
 }
 
 .path-grid,
+.conditions-grid,
 .faq-list,
 .team-grid {
   display: grid;
@@ -413,6 +422,152 @@ h3 {
   font-weight: 600;
   color: var(--bg-deep);
   line-height: 1.55;
+}
+
+.condition-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 100%;
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.condition-subtitle {
+  margin: 0 0 0.45rem;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.condition-link {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 249, 240, 0.86));
+}
+
+.condition-link:hover,
+.condition-link:focus-visible {
+  transform: translateY(-4px);
+  border-color: rgba(242, 107, 91, 0.22);
+  box-shadow: 0 24px 48px rgba(23, 36, 50, 0.16);
+}
+
+.condition-link h3 {
+  font-size: 1.45rem;
+}
+
+.condition-excerpt {
+  margin: 0.85rem 0 0;
+  line-height: 1.65;
+}
+
+.condition-link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-weight: 700;
+  color: var(--bg-deep);
+}
+
+.condition-link-text {
+  letter-spacing: 0.01em;
+}
+
+.condition-arrow {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  background: rgba(255, 255, 255, 0.82);
+  flex-shrink: 0;
+}
+
+.condition-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+
+.condition-list li {
+  position: relative;
+  padding-left: 1.1rem;
+  line-height: 1.6;
+}
+
+.condition-list li::before {
+  content: "";
+  position: absolute;
+  top: 0.72rem;
+  left: 0;
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.condition-page {
+  padding: 4.2rem 0 5rem;
+}
+
+.condition-hero {
+  padding: clamp(1.6rem, 3vw, 2.4rem);
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(circle at top right, rgba(241, 178, 74, 0.18), transparent 26%),
+    linear-gradient(140deg, rgba(255, 255, 255, 0.88), rgba(255, 249, 240, 0.74));
+  border: 1px solid rgba(31, 41, 51, 0.08);
+  box-shadow: var(--shadow);
+}
+
+.condition-hero h1 {
+  max-width: 12ch;
+}
+
+.condition-page-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+.condition-page-section,
+.condition-page-note {
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+}
+
+.condition-page-section h2,
+.condition-page-note h2 {
+  margin-top: 0.35rem;
+  font-size: clamp(1.6rem, 3vw, 2.3rem);
+}
+
+.condition-page-section p,
+.condition-page-note p {
+  margin: 0;
+  line-height: 1.72;
+}
+
+.condition-page-section-wide {
+  grid-column: 1 / -1;
+}
+
+.condition-page-note {
+  background: linear-gradient(160deg, #183855 0%, #24537a 100%);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 28px 60px rgba(15, 35, 54, 0.2);
+}
+
+.condition-page-note p,
+.condition-page-note .card-kicker {
+  color: rgba(255, 255, 255, 0.84);
 }
 
 .accent-card {
@@ -585,6 +740,8 @@ h3 {
   .team-grid,
   .info-grid,
   .path-grid,
+  .conditions-grid,
+  .condition-page-grid,
   .faq-list {
     grid-template-columns: 1fr;
   }
@@ -592,6 +749,9 @@ h3 {
   .checkin-card,
   .feature-card,
   .path-card,
+  .condition-card,
+  .condition-page-section,
+  .condition-page-note,
   .timeline-step,
   .faq-item,
   .team-card,
@@ -640,9 +800,14 @@ h3 {
     gap: 1.25rem;
   }
 
+  .condition-page {
+    padding-top: 3rem;
+  }
+
   .statement,
   .info-grid,
   .paths-section,
+  .conditions-section,
   .adults-section,
   .team-section,
   .faq-section {
@@ -732,11 +897,17 @@ h3 {
   .checkin-card,
   .feature-card,
   .path-card,
+  .condition-card,
   .timeline-step,
   .faq-item,
   .team-card,
   .urgent-section,
   .statement {
+    padding: 1.1rem;
+  }
+
+  .condition-page-section,
+  .condition-page-note {
     padding: 1.1rem;
   }
 }

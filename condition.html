@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mental Health Library | SafeMind</title>
+    <meta
+      name="description"
+      content="Explore teen-friendly mental health guides from SafeMind with signs, symptoms, and next steps for getting support."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&amp;family=Newsreader:opsz,wght@6..72,400;6..72,600&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="site-header">
+        <a class="brand" href="index.html#top" aria-label="SafeMind home">
+          <span class="brand-mark">S</span>
+          <span class="brand-copy">
+            <strong>SafeMind</strong>
+            <small>Mental Well-Being</small>
+          </span>
+        </a>
+
+        <nav class="site-nav" aria-label="Primary">
+          <a href="index.html#support">Support</a>
+          <a href="index.html#learn">Learn</a>
+          <a href="index.html#conditions">Conditions</a>
+          <a href="index.html#adults">Trusted Adults</a>
+          <a href="index.html#urgent">Urgent Help</a>
+        </nav>
+
+        <a class="button button-small button-ghost" href="index.html#conditions">Back to Library</a>
+      </header>
+
+      <main class="condition-page" id="condition-page"></main>
+
+      <footer class="site-footer">
+        <div>
+          <strong>SafeMind</strong>
+          <p>
+            A supportive mental well-being concept for teens who need a safer first
+            step.
+          </p>
+        </div>
+        <p class="footer-note">
+          If this is an emergency, call 911. For U.S. emotional crisis support, call
+          or text 988 or visit
+          <a href="https://988lifeline.org/get-help/" target="_blank" rel="noreferrer">988lifeline.org</a>.
+        </p>
+        <p class="footer-note">&copy; <span id="year"></span> SafeMind</p>
+      </footer>
+    </div>
+
+    <script src="mental-health-data.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>
