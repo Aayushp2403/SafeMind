@@ -364,7 +364,8 @@ h3 {
 .conditions-section,
 .adults-section,
 .team-section,
-.faq-section {
+.faq-section,
+.feedback-section {
   padding: 1rem 0 5rem;
 }
 
@@ -692,6 +693,81 @@ h3 {
   font-weight: 700;
 }
 
+.feedback-card {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 1.5rem;
+  align-items: center;
+  padding: clamp(1.5rem, 3vw, 2.35rem);
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(31, 41, 51, 0.08);
+  background:
+    radial-gradient(circle at top left, rgba(242, 107, 91, 0.18), transparent 30%),
+    linear-gradient(140deg, rgba(255, 255, 255, 0.9), rgba(255, 249, 240, 0.82));
+  box-shadow: var(--shadow);
+}
+
+.feedback-copy p {
+  line-height: 1.72;
+}
+
+.rating-widget {
+  padding: 1.35rem;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(31, 41, 51, 0.08);
+}
+
+.rating-stars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin: 1rem 0 0.8rem;
+}
+
+.rating-star {
+  appearance: none;
+  width: 3.15rem;
+  height: 3.15rem;
+  border: 1px solid rgba(31, 41, 51, 0.08);
+  border-radius: 999px;
+  background: white;
+  color: #c8b39b;
+  display: grid;
+  place-items: center;
+  font: inherit;
+  font-size: 1.55rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 12px 28px rgba(23, 36, 50, 0.08);
+}
+
+.rating-star:hover,
+.rating-star:focus-visible,
+.rating-star.is-active {
+  color: #c97300;
+  background: #fff4d8;
+  border-color: rgba(242, 107, 91, 0.22);
+  transform: translateY(-2px);
+}
+
+.rating-scale,
+.rating-status {
+  margin: 0;
+}
+
+.rating-scale {
+  font-size: 0.94rem;
+  color: var(--text-soft);
+}
+
+.rating-status {
+  margin-top: 0.9rem;
+  color: var(--bg-deep);
+  font-weight: 600;
+  line-height: 1.6;
+}
+
 .site-footer {
   display: grid;
   gap: 0.75rem;
@@ -736,6 +812,7 @@ h3 {
 @media (max-width: 960px) {
   .hero,
   .urgent-section,
+  .feedback-card,
   .timeline,
   .team-grid,
   .info-grid,
@@ -810,7 +887,8 @@ h3 {
   .conditions-section,
   .adults-section,
   .team-section,
-  .faq-section {
+  .faq-section,
+  .feedback-section {
     padding-bottom: 4rem;
   }
 
@@ -850,6 +928,15 @@ h3 {
 
   .team-card {
     align-items: flex-start;
+  }
+
+  .rating-stars {
+    gap: 0.55rem;
+  }
+
+  .rating-star {
+    width: 2.85rem;
+    height: 2.85rem;
   }
 
   .team-avatar {
@@ -908,6 +995,11 @@ h3 {
 
   .condition-page-section,
   .condition-page-note {
+    padding: 1.1rem;
+  }
+
+  .rating-widget,
+  .feedback-card {
     padding: 1.1rem;
   }
 }

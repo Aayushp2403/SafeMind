@@ -13,6 +13,14 @@ const moodResponses = {
     "You do not need a perfect label. Start with: 'Something feels off, and I do not want to handle it alone.'",
 };
 
+const ratingMessages = {
+  1: "Thanks for the honest feedback. We can make SafeMind more helpful.",
+  2: "Thanks for rating SafeMind. We still have room to make this easier to use.",
+  3: "Thanks for rating SafeMind. It helps to know this felt somewhat useful.",
+  4: "Thanks for rating SafeMind. We are glad this felt helpful.",
+  5: "Thanks for rating SafeMind. We are really glad this supported you today.",
+};
+
 const conditionLibrary = Array.isArray(window.conditionLibrary)
   ? window.conditionLibrary
   : [];
@@ -22,7 +30,11 @@ const conditionBySlug = new Map(
 
 const moodButtons = document.querySelectorAll(".mood-pill");
 const moodResponse = document.querySelector("#mood-response");
+const ratingStars = document.querySelectorAll(".rating-star");
+const ratingStarsGroup = document.querySelector(".rating-stars");
+const ratingStatus = document.querySelector("#rating-status");
 const year = document.querySelector("#year");
+const websiteRatingStorageKey = "safemind-website-rating";
 
 if (year) {
   year.textContent = new Date().getFullYear().toString();
@@ -177,6 +189,85 @@ function renderConditionPage() {
   `;
 }
 
+function readSavedRating() {
+  try {
+    const storedRating = Number(window.localStorage.getItem(websiteRatingStorageKey));
+
+    return storedRating >= 1 && storedRating <= 5 ? storedRating : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function saveRating(rating) {
+  try {
+    window.localStorage.setItem(websiteRatingStorageKey, String(rating));
+  } catch (error) {
+    // Ignore storage errors so the widget still works visually.
+  }
+}
+
+function updateRatingState(selectedRating, previewRating = selectedRating) {
+  if (!ratingStars.length || !ratingStatus) {
+    return;
+  }
+
+  ratingStars.forEach((star) => {
+    const starValue = Number(star.dataset.rating);
+    const isFilled = starValue <= previewRating;
+    const isSelected = starValue === selectedRating;
+
+    star.classList.toggle("is-active", isFilled);
+    star.setAttribute("aria-pressed", String(isSelected));
+  });
+
+  if (selectedRating && ratingMessages[selectedRating]) {
+    ratingStatus.textContent = `You rated SafeMind ${selectedRating} out of 5 stars. ${ratingMessages[selectedRating]}`;
+  } else {
+    ratingStatus.textContent = "Tap a star to share how helpful this website felt.";
+  }
+}
+
+function setupWebsiteRating() {
+  if (!ratingStars.length || !ratingStatus) {
+    return;
+  }
+
+  let selectedRating = readSavedRating();
+
+  updateRatingState(selectedRating);
+
+  ratingStars.forEach((star) => {
+    const starValue = Number(star.dataset.rating);
+
+    star.addEventListener("mouseenter", () => {
+      updateRatingState(selectedRating, starValue);
+    });
+
+    star.addEventListener("focus", () => {
+      updateRatingState(selectedRating, starValue);
+    });
+
+    star.addEventListener("click", () => {
+      selectedRating = starValue;
+      saveRating(selectedRating);
+      updateRatingState(selectedRating);
+    });
+  });
+
+  if (ratingStarsGroup) {
+    ratingStarsGroup.addEventListener("mouseleave", () => {
+      updateRatingState(selectedRating);
+    });
+
+    ratingStarsGroup.addEventListener("focusout", (event) => {
+      if (!ratingStarsGroup.contains(event.relatedTarget)) {
+        updateRatingState(selectedRating);
+      }
+    });
+  }
+}
+
 function setupRevealObserver() {
   const revealItems = document.querySelectorAll(".reveal");
 
@@ -208,4 +299,5 @@ function setupRevealObserver() {
 renderConditionCards();
 renderConditionPage();
 
+setupWebsiteRating();
 setupRevealObserver();
