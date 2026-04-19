@@ -33,8 +33,23 @@ const moodResponse = document.querySelector("#mood-response");
 const ratingStars = document.querySelectorAll(".rating-star");
 const ratingStarsGroup = document.querySelector(".rating-stars");
 const ratingStatus = document.querySelector("#rating-status");
+const ratingMeta = document.querySelector("#rating-meta");
+const dashboardKeyForm = document.querySelector("#dashboard-key-form");
+const dashboardKeyInput = document.querySelector("#dashboard-key");
+const dashboardRefreshButton = document.querySelector("#dashboard-refresh");
+const dashboardStatus = document.querySelector("#dashboard-status");
+const dashboardAverage = document.querySelector("#dashboard-average");
+const dashboardAverageNote = document.querySelector("#dashboard-average-note");
+const dashboardTotal = document.querySelector("#dashboard-total");
+const dashboardFiveStarShare = document.querySelector("#dashboard-five-star-share");
+const dashboardBreakdown = document.querySelector("#dashboard-breakdown");
+const dashboardRecent = document.querySelector("#dashboard-recent");
+const dashboardLastUpdated = document.querySelector("#dashboard-last-updated");
 const year = document.querySelector("#year");
 const websiteRatingStorageKey = "safemind-website-rating";
+const websiteRatingVisitorKey = "safemind-rating-visitor-id";
+const dashboardKeyStorageKey = "safemind-dashboard-key";
+let fallbackVisitorId = null;
 
 if (year) {
   year.textContent = new Date().getFullYear().toString();
@@ -57,7 +72,7 @@ moodButtons.forEach((button) => {
 });
 
 function escapeHtml(value) {
-  return value
+  return String(value)
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;")
@@ -189,21 +204,84 @@ function renderConditionPage() {
   `;
 }
 
-function readSavedRating() {
+function readStoredValue(key) {
   try {
-    const storedRating = Number(window.localStorage.getItem(websiteRatingStorageKey));
-
-    return storedRating >= 1 && storedRating <= 5 ? storedRating : null;
+    return window.localStorage.getItem(key);
   } catch (error) {
     return null;
   }
 }
 
-function saveRating(rating) {
+function saveStoredValue(key, value) {
   try {
-    window.localStorage.setItem(websiteRatingStorageKey, String(rating));
+    window.localStorage.setItem(key, value);
+    return true;
   } catch (error) {
-    // Ignore storage errors so the widget still works visually.
+    return false;
+  }
+}
+
+function removeStoredValue(key) {
+  try {
+    window.localStorage.removeItem(key);
+  } catch (error) {
+    // Ignore storage errors for optional conveniences.
+  }
+}
+
+function readSavedRating() {
+  const storedRating = Number(readStoredValue(websiteRatingStorageKey));
+
+  return storedRating >= 1 && storedRating <= 5 ? storedRating : null;
+}
+
+function saveRating(rating) {
+  saveStoredValue(websiteRatingStorageKey, String(rating));
+}
+
+function createVisitorId() {
+  if (window.crypto && typeof window.crypto.randomUUID === "function") {
+    return window.crypto.randomUUID();
+  }
+
+  return `visitor-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
+}
+
+function ensureVisitorId() {
+  const storedVisitorId = readStoredValue(websiteRatingVisitorKey);
+
+  if (storedVisitorId) {
+    return storedVisitorId;
+  }
+
+  if (fallbackVisitorId) {
+    return fallbackVisitorId;
+  }
+
+  const newVisitorId = createVisitorId();
+  const wasSaved = saveStoredValue(websiteRatingVisitorKey, newVisitorId);
+
+  if (!wasSaved) {
+    fallbackVisitorId = newVisitorId;
+  }
+
+  return newVisitorId;
+}
+
+function setRatingMeta(message, tone = "") {
+  if (!ratingMeta) {
+    return;
+  }
+
+  ratingMeta.textContent = message;
+  ratingMeta.classList.remove("is-success", "is-warning");
+
+  if (tone === "success") {
+    ratingMeta.classList.add("is-success");
+  }
+
+  if (tone === "warning") {
+    ratingMeta.classList.add("is-warning");
   }
 }
 
@@ -228,14 +306,40 @@ function updateRatingState(selectedRating, previewRating = selectedRating) {
   }
 }
 
+async function submitRating(rating) {
+  const response = await window.fetch("/api/ratings", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      rating,
+      visitorId: ensureVisitorId(),
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Unable to save rating (${response.status})`);
+  }
+
+  return response.json();
+}
+
 function setupWebsiteRating() {
   if (!ratingStars.length || !ratingStatus) {
     return;
   }
 
   let selectedRating = readSavedRating();
+  let latestSubmissionId = 0;
 
   updateRatingState(selectedRating);
+
+  if (selectedRating) {
+    setRatingMeta("Your most recent rating is saved on this device.");
+  } else {
+    setRatingMeta("Anonymous feedback is saved once per device.");
+  }
 
   ratingStars.forEach((star) => {
     const starValue = Number(star.dataset.rating);
@@ -250,8 +354,47 @@ function setupWebsiteRating() {
 
     star.addEventListener("click", () => {
       selectedRating = starValue;
+      latestSubmissionId += 1;
+
+      const submissionId = latestSubmissionId;
+
       saveRating(selectedRating);
       updateRatingState(selectedRating);
+      setRatingMeta("Saving your anonymous feedback...");
+
+      void submitRating(selectedRating)
+        .then((payload) => {
+          if (submissionId !== latestSubmissionId) {
+            return;
+          }
+
+          const totalRatings = payload && payload.summary
+            ? Number(payload.summary.totalRatings)
+            : null;
+
+          if (Number.isFinite(totalRatings)) {
+            const pluralSuffix = totalRatings === 1 ? "" : "s";
+            setRatingMeta(
+              `Anonymous feedback saved. ${totalRatings} rating${pluralSuffix} collected so far.`,
+              "success"
+            );
+          } else {
+            setRatingMeta(
+              "Anonymous feedback saved. Thank you for helping us improve SafeMind.",
+              "success"
+            );
+          }
+        })
+        .catch(() => {
+          if (submissionId !== latestSubmissionId) {
+            return;
+          }
+
+          setRatingMeta(
+            "Saved on this device. Server sync is unavailable right now.",
+            "warning"
+          );
+        });
     });
   });
 
@@ -266,6 +409,273 @@ function setupWebsiteRating() {
       }
     });
   }
+}
+
+function setDashboardStatus(message, tone = "") {
+  if (!dashboardStatus) {
+    return;
+  }
+
+  dashboardStatus.textContent = message;
+  dashboardStatus.classList.remove("is-success", "is-warning");
+
+  if (tone === "success") {
+    dashboardStatus.classList.add("is-success");
+  }
+
+  if (tone === "warning") {
+    dashboardStatus.classList.add("is-warning");
+  }
+}
+
+function formatRatingShare(value) {
+  return Number.isFinite(value) ? `${Math.round(value)}%` : "0%";
+}
+
+function formatDateTime(value) {
+  if (!value) {
+    return "--";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "--";
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
+
+function showDashboardPlaceholder(message) {
+  if (dashboardAverage) {
+    dashboardAverage.textContent = "--";
+  }
+
+  if (dashboardAverageNote) {
+    dashboardAverageNote.textContent = "Waiting for data";
+  }
+
+  if (dashboardTotal) {
+    dashboardTotal.textContent = "0";
+  }
+
+  if (dashboardFiveStarShare) {
+    dashboardFiveStarShare.textContent = "0%";
+  }
+
+  if (dashboardLastUpdated) {
+    dashboardLastUpdated.textContent = "--";
+  }
+
+  if (dashboardBreakdown) {
+    dashboardBreakdown.innerHTML = `<p class="dashboard-empty">${escapeHtml(message)}</p>`;
+  }
+
+  if (dashboardRecent) {
+    dashboardRecent.innerHTML = `<li class="dashboard-empty">${escapeHtml(message)}</li>`;
+  }
+}
+
+async function fetchDashboardSummary(dashboardKey = "") {
+  const headers = {};
+
+  if (dashboardKey) {
+    headers["x-dashboard-key"] = dashboardKey;
+  }
+
+  const response = await window.fetch("/api/ratings/summary", {
+    headers,
+  });
+
+  if (response.status === 401) {
+    throw new Error("unauthorized");
+  }
+
+  if (!response.ok) {
+    throw new Error(`Unable to load summary (${response.status})`);
+  }
+
+  return response.json();
+}
+
+function renderDashboardSummary(summary) {
+  if (!summary) {
+    showDashboardPlaceholder("No ratings yet.");
+    return;
+  }
+
+  const totalRatings = Number(summary.totalRatings) || 0;
+  const averageRating = Number(summary.averageRating);
+  const breakdown = Array.isArray(summary.breakdown) ? summary.breakdown : [];
+  const recentRatings = Array.isArray(summary.recentRatings) ? summary.recentRatings : [];
+  const fiveStarCount =
+    breakdown.find((entry) => Number(entry.rating) === 5)?.count || 0;
+  const fiveStarShare = totalRatings
+    ? Math.round((Number(fiveStarCount) / totalRatings) * 100)
+    : 0;
+
+  if (dashboardAverage) {
+    dashboardAverage.textContent =
+      totalRatings && Number.isFinite(averageRating)
+        ? averageRating.toFixed(1)
+        : "--";
+  }
+
+  if (dashboardAverageNote) {
+    dashboardAverageNote.textContent = totalRatings
+      ? "Average out of 5"
+      : "No saved ratings yet";
+  }
+
+  if (dashboardTotal) {
+    dashboardTotal.textContent = String(totalRatings);
+  }
+
+  if (dashboardFiveStarShare) {
+    dashboardFiveStarShare.textContent = formatRatingShare(fiveStarShare);
+  }
+
+  if (dashboardLastUpdated) {
+    dashboardLastUpdated.textContent = formatDateTime(summary.lastUpdated);
+  }
+
+  if (dashboardBreakdown) {
+    if (!breakdown.length) {
+      dashboardBreakdown.innerHTML =
+        '<p class="dashboard-empty">No ratings have been saved yet.</p>';
+    } else {
+      dashboardBreakdown.innerHTML = breakdown
+        .sort((left, right) => Number(right.rating) - Number(left.rating))
+        .map((entry) => {
+          const share = totalRatings
+            ? Math.round((Number(entry.count) / totalRatings) * 100)
+            : 0;
+          const trackWidth = share === 0 ? 0 : Math.max(share, 4);
+
+          return `
+            <div class="breakdown-row">
+              <div class="breakdown-meta">
+                <span>${escapeHtml(entry.rating)} star${Number(entry.rating) === 1 ? "" : "s"}</span>
+                <strong>${escapeHtml(entry.count)}</strong>
+              </div>
+              <div class="breakdown-track" aria-hidden="true">
+                <span style="width: ${trackWidth}%"></span>
+              </div>
+              <p class="breakdown-share">${share}% of saved ratings</p>
+            </div>
+          `;
+        })
+        .join("");
+    }
+  }
+
+  if (dashboardRecent) {
+    if (!recentRatings.length) {
+      dashboardRecent.innerHTML =
+        '<li class="dashboard-empty">Recent submissions will appear here.</li>';
+    } else {
+      dashboardRecent.innerHTML = recentRatings
+        .map((entry) => {
+          const starLabel = `${entry.rating}/5 stars`;
+
+          return `
+            <li class="recent-item">
+              <span class="recent-rating">${escapeHtml(starLabel)}</span>
+              <time datetime="${escapeHtml(entry.updatedAt)}">${escapeHtml(
+                formatDateTime(entry.updatedAt)
+              )}</time>
+            </li>
+          `;
+        })
+        .join("");
+    }
+  }
+}
+
+function setupOwnerDashboard() {
+  if (!dashboardStatus) {
+    return;
+  }
+
+  let latestRequestId = 0;
+
+  showDashboardPlaceholder("Loading saved ratings...");
+
+  if (dashboardKeyInput) {
+    dashboardKeyInput.value = readStoredValue(dashboardKeyStorageKey) || "";
+  }
+
+  const loadSummary = async (dashboardKey = "") => {
+    latestRequestId += 1;
+    const requestId = latestRequestId;
+
+    setDashboardStatus("Loading saved ratings...");
+
+    try {
+      const summary = await fetchDashboardSummary(dashboardKey);
+
+      if (requestId !== latestRequestId) {
+        return;
+      }
+
+      renderDashboardSummary(summary);
+
+      if (dashboardKey) {
+        saveStoredValue(dashboardKeyStorageKey, dashboardKey);
+      } else {
+        removeStoredValue(dashboardKeyStorageKey);
+      }
+
+      const totalRatings = Number(summary.totalRatings) || 0;
+      const pluralSuffix = totalRatings === 1 ? "" : "s";
+
+      setDashboardStatus(
+        totalRatings
+          ? `Showing ${totalRatings} saved rating${pluralSuffix}.`
+          : "Dashboard is connected. No saved ratings yet.",
+        "success"
+      );
+    } catch (error) {
+      if (requestId !== latestRequestId) {
+        return;
+      }
+
+      if (error instanceof Error && error.message === "unauthorized") {
+        showDashboardPlaceholder("Enter the dashboard key to view ratings.");
+        setDashboardStatus(
+          "This summary is protected. Enter the owner dashboard key and load again.",
+          "warning"
+        );
+        return;
+      }
+
+      showDashboardPlaceholder("The SafeMind server is not reachable right now.");
+      setDashboardStatus(
+        "Could not load ratings. Check that the SafeMind server is running.",
+        "warning"
+      );
+    }
+  };
+
+  if (dashboardKeyForm) {
+    dashboardKeyForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const dashboardKey = dashboardKeyInput ? dashboardKeyInput.value.trim() : "";
+      void loadSummary(dashboardKey);
+    });
+  }
+
+  if (dashboardRefreshButton) {
+    dashboardRefreshButton.addEventListener("click", () => {
+      const dashboardKey = dashboardKeyInput ? dashboardKeyInput.value.trim() : "";
+      void loadSummary(dashboardKey);
+    });
+  }
+
+  void loadSummary(readStoredValue(dashboardKeyStorageKey) || "");
 }
 
 function setupRevealObserver() {
@@ -300,4 +710,5 @@ renderConditionCards();
 renderConditionPage();
 
 setupWebsiteRating();
+setupOwnerDashboard();
 setupRevealObserver();
