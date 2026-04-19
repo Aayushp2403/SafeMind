@@ -53,28 +53,40 @@
 
           <aside class="dashboard-auth reveal" id="overview">
             <p class="card-kicker">Owner Access</p>
-            <h2>Load saved ratings</h2>
+            <h2>Sign in to load ratings</h2>
             <p>
-              Enter your dashboard key if you protected the summary endpoint. If you
-              are running this locally without a key, just use refresh.
+              This dashboard now uses Supabase email sign-in, which works on GitHub
+              Pages without a custom backend server.
             </p>
 
-            <form class="dashboard-form" id="dashboard-key-form">
+            <form class="dashboard-form" id="owner-auth-form">
               <input
                 class="dashboard-input"
-                id="dashboard-key"
-                type="password"
-                autocomplete="current-password"
-                placeholder="Dashboard key (optional)"
+                id="owner-email"
+                type="email"
+                autocomplete="email"
+                placeholder="Owner email"
               />
-              <button class="button button-small" type="submit">Load Ratings</button>
+              <button class="button button-small" type="submit">Email Magic Link</button>
               <button class="button button-small button-ghost" type="button" id="dashboard-refresh">
                 Refresh
               </button>
+              <button
+                class="button button-small button-ghost"
+                type="button"
+                id="owner-logout"
+                hidden
+              >
+                Sign Out
+              </button>
             </form>
 
+            <p class="dashboard-access-note" id="dashboard-access-note">
+              Enter the owner email address to receive a secure magic link from Supabase.
+            </p>
+            <p class="dashboard-user" id="dashboard-user">Not signed in</p>
             <p class="dashboard-status" id="dashboard-status" aria-live="polite">
-              Loading saved ratings...
+              Loading owner access...
             </p>
           </aside>
         </section>
@@ -144,6 +156,8 @@
       </footer>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script src="script.js"></script>
   </body>
 </html>

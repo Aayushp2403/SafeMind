@@ -770,11 +770,24 @@ h3 {
 }
 
 .dashboard-status,
+.dashboard-access-note,
+.dashboard-user,
 .owner-timestamp,
 .stat-note,
 .breakdown-share,
 .dashboard-empty {
   color: var(--text-soft);
+}
+
+.dashboard-access-note,
+.dashboard-user {
+  margin: 0.85rem 0 0;
+  line-height: 1.55;
+}
+
+.dashboard-user {
+  font-weight: 600;
+  color: var(--bg-deep);
 }
 
 .dashboard-status {

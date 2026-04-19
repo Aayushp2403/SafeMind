@@ -27,6 +27,14 @@ const conditionLibrary = Array.isArray(window.conditionLibrary)
 const conditionBySlug = new Map(
   conditionLibrary.map((condition) => [condition.slug, condition])
 );
+const supabaseSettings =
+  window.safeMindSupabase && typeof window.safeMindSupabase === "object"
+    ? window.safeMindSupabase
+    : {};
+const supabaseSdk =
+  window.supabase && typeof window.supabase.createClient === "function"
+    ? window.supabase
+    : null;
 
 const moodButtons = document.querySelectorAll(".mood-pill");
 const moodResponse = document.querySelector("#mood-response");
@@ -34,10 +42,13 @@ const ratingStars = document.querySelectorAll(".rating-star");
 const ratingStarsGroup = document.querySelector(".rating-stars");
 const ratingStatus = document.querySelector("#rating-status");
 const ratingMeta = document.querySelector("#rating-meta");
-const dashboardKeyForm = document.querySelector("#dashboard-key-form");
-const dashboardKeyInput = document.querySelector("#dashboard-key");
+const ownerAuthForm = document.querySelector("#owner-auth-form");
+const ownerEmailInput = document.querySelector("#owner-email");
+const ownerLogoutButton = document.querySelector("#owner-logout");
 const dashboardRefreshButton = document.querySelector("#dashboard-refresh");
 const dashboardStatus = document.querySelector("#dashboard-status");
+const dashboardAccessNote = document.querySelector("#dashboard-access-note");
+const dashboardUser = document.querySelector("#dashboard-user");
 const dashboardAverage = document.querySelector("#dashboard-average");
 const dashboardAverageNote = document.querySelector("#dashboard-average-note");
 const dashboardTotal = document.querySelector("#dashboard-total");
@@ -48,8 +59,10 @@ const dashboardLastUpdated = document.querySelector("#dashboard-last-updated");
 const year = document.querySelector("#year");
 const websiteRatingStorageKey = "safemind-website-rating";
 const websiteRatingVisitorKey = "safemind-rating-visitor-id";
-const dashboardKeyStorageKey = "safemind-dashboard-key";
+
 let fallbackVisitorId = null;
+let supabaseClient = null;
+let ownerAuthSubscription = null;
 
 if (year) {
   year.textContent = new Date().getFullYear().toString();
@@ -221,14 +234,6 @@ function saveStoredValue(key, value) {
   }
 }
 
-function removeStoredValue(key) {
-  try {
-    window.localStorage.removeItem(key);
-  } catch (error) {
-    // Ignore storage errors for optional conveniences.
-  }
-}
-
 function readSavedRating() {
   const storedRating = Number(readStoredValue(websiteRatingStorageKey));
 
@@ -266,6 +271,48 @@ function ensureVisitorId() {
   }
 
   return newVisitorId;
+}
+
+function getSupabaseConfig() {
+  const url =
+    typeof supabaseSettings.url === "string" ? supabaseSettings.url.trim() : "";
+  const anonKey =
+    typeof supabaseSettings.anonKey === "string"
+      ? supabaseSettings.anonKey.trim()
+      : "";
+
+  return {
+    url,
+    anonKey,
+  };
+}
+
+function isSupabaseConfigured() {
+  const { url, anonKey } = getSupabaseConfig();
+
+  return Boolean(url && anonKey && supabaseSdk);
+}
+
+function getSupabaseClient() {
+  if (supabaseClient) {
+    return supabaseClient;
+  }
+
+  const { url, anonKey } = getSupabaseConfig();
+
+  if (!url || !anonKey || !supabaseSdk) {
+    return null;
+  }
+
+  supabaseClient = supabaseSdk.createClient(url, anonKey, {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+    },
+  });
+
+  return supabaseClient;
 }
 
 function setRatingMeta(message, tone = "") {
@@ -307,22 +354,25 @@ function updateRatingState(selectedRating, previewRating = selectedRating) {
 }
 
 async function submitRating(rating) {
-  const response = await window.fetch("/api/ratings", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      rating,
-      visitorId: ensureVisitorId(),
-    }),
-  });
+  const client = getSupabaseClient();
 
-  if (!response.ok) {
-    throw new Error(`Unable to save rating (${response.status})`);
+  if (!client) {
+    throw new Error("Feedback storage is not configured.");
   }
 
-  return response.json();
+  const { error } = await client.from("site_ratings").upsert(
+    {
+      visitor_id: ensureVisitorId(),
+      rating,
+    },
+    {
+      onConflict: "visitor_id",
+    }
+  );
+
+  if (error) {
+    throw error;
+  }
 }
 
 function setupWebsiteRating() {
@@ -335,10 +385,17 @@ function setupWebsiteRating() {
 
   updateRatingState(selectedRating);
 
-  if (selectedRating) {
-    setRatingMeta("Your most recent rating is saved on this device.");
+  if (isSupabaseConfigured()) {
+    setRatingMeta(
+      selectedRating
+        ? "Your most recent rating is saved on this device and synced anonymously."
+        : "Anonymous feedback is saved once per device."
+    );
   } else {
-    setRatingMeta("Anonymous feedback is saved once per device.");
+    setRatingMeta(
+      "Feedback storage is not connected yet. Add your Supabase settings to turn on live ratings.",
+      "warning"
+    );
   }
 
   ratingStars.forEach((star) => {
@@ -360,30 +417,27 @@ function setupWebsiteRating() {
 
       saveRating(selectedRating);
       updateRatingState(selectedRating);
+
+      if (!isSupabaseConfigured()) {
+        setRatingMeta(
+          "Saved on this device. Connect Supabase to collect live ratings from all visitors.",
+          "warning"
+        );
+        return;
+      }
+
       setRatingMeta("Saving your anonymous feedback...");
 
       void submitRating(selectedRating)
-        .then((payload) => {
+        .then(() => {
           if (submissionId !== latestSubmissionId) {
             return;
           }
 
-          const totalRatings = payload && payload.summary
-            ? Number(payload.summary.totalRatings)
-            : null;
-
-          if (Number.isFinite(totalRatings)) {
-            const pluralSuffix = totalRatings === 1 ? "" : "s";
-            setRatingMeta(
-              `Anonymous feedback saved. ${totalRatings} rating${pluralSuffix} collected so far.`,
-              "success"
-            );
-          } else {
-            setRatingMeta(
-              "Anonymous feedback saved. Thank you for helping us improve SafeMind.",
-              "success"
-            );
-          }
+          setRatingMeta(
+            "Anonymous feedback saved. Thank you for helping improve SafeMind.",
+            "success"
+          );
         })
         .catch(() => {
           if (submissionId !== latestSubmissionId) {
@@ -391,7 +445,7 @@ function setupWebsiteRating() {
           }
 
           setRatingMeta(
-            "Saved on this device. Server sync is unavailable right now.",
+            "Saved on this device, but live sync is unavailable right now.",
             "warning"
           );
         });
@@ -479,30 +533,8 @@ function showDashboardPlaceholder(message) {
   }
 }
 
-async function fetchDashboardSummary(dashboardKey = "") {
-  const headers = {};
-
-  if (dashboardKey) {
-    headers["x-dashboard-key"] = dashboardKey;
-  }
-
-  const response = await window.fetch("/api/ratings/summary", {
-    headers,
-  });
-
-  if (response.status === 401) {
-    throw new Error("unauthorized");
-  }
-
-  if (!response.ok) {
-    throw new Error(`Unable to load summary (${response.status})`);
-  }
-
-  return response.json();
-}
-
 function renderDashboardSummary(summary) {
-  if (!summary) {
+  if (!summary || typeof summary !== "object") {
     showDashboardPlaceholder("No ratings yet.");
     return;
   }
@@ -510,7 +542,9 @@ function renderDashboardSummary(summary) {
   const totalRatings = Number(summary.totalRatings) || 0;
   const averageRating = Number(summary.averageRating);
   const breakdown = Array.isArray(summary.breakdown) ? summary.breakdown : [];
-  const recentRatings = Array.isArray(summary.recentRatings) ? summary.recentRatings : [];
+  const recentRatings = Array.isArray(summary.recentRatings)
+    ? summary.recentRatings
+    : [];
   const fiveStarCount =
     breakdown.find((entry) => Number(entry.rating) === 5)?.count || 0;
   const fiveStarShare = totalRatings
@@ -548,6 +582,7 @@ function renderDashboardSummary(summary) {
         '<p class="dashboard-empty">No ratings have been saved yet.</p>';
     } else {
       dashboardBreakdown.innerHTML = breakdown
+        .slice()
         .sort((left, right) => Number(right.rating) - Number(left.rating))
         .map((entry) => {
           const share = totalRatings
@@ -595,87 +630,230 @@ function renderDashboardSummary(summary) {
   }
 }
 
+function setOwnerUiState(user) {
+  if (dashboardUser) {
+    dashboardUser.textContent = user && user.email
+      ? `Signed in as ${user.email}`
+      : "Not signed in";
+  }
+
+  if (dashboardAccessNote) {
+    dashboardAccessNote.textContent = user
+      ? "Your session is active. If this account matches the owner access rule in Supabase, the rating summary will load below."
+      : "Enter the owner email address to receive a secure magic link from Supabase.";
+  }
+
+  if (ownerLogoutButton) {
+    ownerLogoutButton.hidden = !user;
+  }
+}
+
+function getOwnerRedirectUrl() {
+  return `${window.location.origin}${window.location.pathname}`;
+}
+
+async function fetchCurrentOwner() {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    return null;
+  }
+
+  const { data, error } = await client.auth.getUser();
+
+  if (error) {
+    return null;
+  }
+
+  return data && data.user ? data.user : null;
+}
+
+async function requestOwnerMagicLink(email) {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    throw new Error("Supabase is not configured.");
+  }
+
+  const { error } = await client.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo: getOwnerRedirectUrl(),
+    },
+  });
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function signOutOwner() {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    return;
+  }
+
+  const { error } = await client.auth.signOut();
+
+  if (error) {
+    throw error;
+  }
+}
+
+async function fetchDashboardSummary() {
+  const client = getSupabaseClient();
+
+  if (!client) {
+    throw new Error("Supabase is not configured.");
+  }
+
+  const { data, error } = await client.rpc("get_site_rating_summary");
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+async function refreshOwnerDashboard() {
+  if (!dashboardStatus) {
+    return;
+  }
+
+  if (!isSupabaseConfigured()) {
+    showDashboardPlaceholder("Add your Supabase project settings to load ratings.");
+    setOwnerUiState(null);
+    setDashboardStatus(
+      "Supabase is not configured yet. Add your project URL and anon key in supabase-config.js.",
+      "warning"
+    );
+    return;
+  }
+
+  setDashboardStatus("Checking owner session...");
+
+  const user = await fetchCurrentOwner();
+
+  setOwnerUiState(user);
+
+  if (!user) {
+    showDashboardPlaceholder("Sign in to load rating data.");
+    setDashboardStatus(
+      "Owner sign-in required. Enter your email to receive a magic link.",
+      "warning"
+    );
+    return;
+  }
+
+  setDashboardStatus("Loading saved ratings...");
+
+  try {
+    const summary = await fetchDashboardSummary();
+
+    renderDashboardSummary(summary);
+
+    const totalRatings = Number(summary && summary.totalRatings) || 0;
+    const pluralSuffix = totalRatings === 1 ? "" : "s";
+
+    setDashboardStatus(
+      totalRatings
+        ? `Showing ${totalRatings} saved rating${pluralSuffix}.`
+        : "Dashboard connected. No ratings have been saved yet.",
+      "success"
+    );
+  } catch (error) {
+    showDashboardPlaceholder("This account could not load the rating summary.");
+    setDashboardStatus(
+      "Signed in, but this account does not have dashboard access yet. Check the Supabase owner policy in supabase-setup.sql.",
+      "warning"
+    );
+  }
+}
+
 function setupOwnerDashboard() {
   if (!dashboardStatus) {
     return;
   }
 
-  let latestRequestId = 0;
+  showDashboardPlaceholder("Loading owner access...");
+  setOwnerUiState(null);
 
-  showDashboardPlaceholder("Loading saved ratings...");
+  if (ownerAuthForm) {
+    ownerAuthForm.addEventListener("submit", (event) => {
+      event.preventDefault();
 
-  if (dashboardKeyInput) {
-    dashboardKeyInput.value = readStoredValue(dashboardKeyStorageKey) || "";
-  }
+      const email = ownerEmailInput ? ownerEmailInput.value.trim() : "";
 
-  const loadSummary = async (dashboardKey = "") => {
-    latestRequestId += 1;
-    const requestId = latestRequestId;
-
-    setDashboardStatus("Loading saved ratings...");
-
-    try {
-      const summary = await fetchDashboardSummary(dashboardKey);
-
-      if (requestId !== latestRequestId) {
+      if (!email) {
+        setDashboardStatus("Enter an email address to receive the owner magic link.", "warning");
         return;
       }
 
-      renderDashboardSummary(summary);
-
-      if (dashboardKey) {
-        saveStoredValue(dashboardKeyStorageKey, dashboardKey);
-      } else {
-        removeStoredValue(dashboardKeyStorageKey);
-      }
-
-      const totalRatings = Number(summary.totalRatings) || 0;
-      const pluralSuffix = totalRatings === 1 ? "" : "s";
-
-      setDashboardStatus(
-        totalRatings
-          ? `Showing ${totalRatings} saved rating${pluralSuffix}.`
-          : "Dashboard is connected. No saved ratings yet.",
-        "success"
-      );
-    } catch (error) {
-      if (requestId !== latestRequestId) {
-        return;
-      }
-
-      if (error instanceof Error && error.message === "unauthorized") {
-        showDashboardPlaceholder("Enter the dashboard key to view ratings.");
+      if (!isSupabaseConfigured()) {
         setDashboardStatus(
-          "This summary is protected. Enter the owner dashboard key and load again.",
+          "Supabase is not configured yet. Add your project URL and anon key first.",
           "warning"
         );
         return;
       }
 
-      showDashboardPlaceholder("The SafeMind server is not reachable right now.");
-      setDashboardStatus(
-        "Could not load ratings. Check that the SafeMind server is running.",
-        "warning"
-      );
-    }
-  };
+      setDashboardStatus("Sending owner magic link...");
 
-  if (dashboardKeyForm) {
-    dashboardKeyForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const dashboardKey = dashboardKeyInput ? dashboardKeyInput.value.trim() : "";
-      void loadSummary(dashboardKey);
+      void requestOwnerMagicLink(email)
+        .then(() => {
+          setDashboardStatus(
+            "Magic link sent. Open the email and return here to load the dashboard.",
+            "success"
+          );
+        })
+        .catch(() => {
+          setDashboardStatus(
+            "Could not send the magic link. Recheck your Supabase Auth email settings and redirect URL.",
+            "warning"
+          );
+        });
     });
   }
 
   if (dashboardRefreshButton) {
     dashboardRefreshButton.addEventListener("click", () => {
-      const dashboardKey = dashboardKeyInput ? dashboardKeyInput.value.trim() : "";
-      void loadSummary(dashboardKey);
+      void refreshOwnerDashboard();
     });
   }
 
-  void loadSummary(readStoredValue(dashboardKeyStorageKey) || "");
+  if (ownerLogoutButton) {
+    ownerLogoutButton.addEventListener("click", () => {
+      setDashboardStatus("Signing out...");
+
+      void signOutOwner()
+        .then(() => {
+          showDashboardPlaceholder("Signed out. Sign in again to load rating data.");
+          setDashboardStatus("Signed out.", "success");
+          setOwnerUiState(null);
+        })
+        .catch(() => {
+          setDashboardStatus("Could not sign out right now.", "warning");
+        });
+    });
+  }
+
+  const client = getSupabaseClient();
+
+  if (client && !ownerAuthSubscription) {
+    const subscription = client.auth.onAuthStateChange(() => {
+      window.setTimeout(() => {
+        void refreshOwnerDashboard();
+      }, 0);
+    });
+
+    ownerAuthSubscription = subscription && subscription.data
+      ? subscription.data.subscription
+      : null;
+  }
+
+  void refreshOwnerDashboard();
 }
 
 function setupRevealObserver() {
