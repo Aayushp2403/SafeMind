@@ -63,6 +63,7 @@ const websiteRatingVisitorKey = "safemind-rating-visitor-id";
 let fallbackVisitorId = null;
 let supabaseClient = null;
 let ownerAuthSubscription = null;
+let ownerMagicLinkCooldownTimer = null;
 
 if (year) {
   year.textContent = new Date().getFullYear().toString();
@@ -643,6 +644,68 @@ function setOwnerUiState(user) {
   }
 }
 
+function getOwnerSendButton() {
+  if (!ownerAuthForm) {
+    return null;
+  }
+
+  return ownerAuthForm.querySelector('button[type="submit"]');
+}
+
+function setOwnerSendButtonLabel(label) {
+  const ownerSendButton = getOwnerSendButton();
+
+  if (!ownerSendButton) {
+    return;
+  }
+
+  ownerSendButton.textContent = label;
+}
+
+function setOwnerSendButtonDisabled(isDisabled) {
+  const ownerSendButton = getOwnerSendButton();
+
+  if (!ownerSendButton) {
+    return;
+  }
+
+  ownerSendButton.disabled = isDisabled;
+}
+
+function clearOwnerMagicLinkCooldown() {
+  if (ownerMagicLinkCooldownTimer) {
+    window.clearInterval(ownerMagicLinkCooldownTimer);
+    ownerMagicLinkCooldownTimer = null;
+  }
+
+  setOwnerSendButtonDisabled(false);
+  setOwnerSendButtonLabel("Email Magic Link");
+}
+
+function startOwnerMagicLinkCooldown(seconds) {
+  let remainingSeconds = Math.max(0, Math.floor(seconds));
+
+  clearOwnerMagicLinkCooldown();
+
+  if (remainingSeconds === 0) {
+    return;
+  }
+
+  setOwnerSendButtonDisabled(true);
+  setOwnerSendButtonLabel(`Wait ${remainingSeconds}s`);
+
+  ownerMagicLinkCooldownTimer = window.setInterval(() => {
+    remainingSeconds -= 1;
+
+    if (remainingSeconds <= 0) {
+      clearOwnerMagicLinkCooldown();
+      return;
+    }
+
+    setOwnerSendButtonLabel(`Wait ${remainingSeconds}s`);
+  }, 1000);
+}
+
 function getOwnerRedirectUrl() {
   return `${window.location.origin}${window.location.pathname}`;
 }
@@ -809,9 +872,12 @@ function setupOwnerDashboard() {
       }
 
       setDashboardStatus("Sending owner magic link...");
+      setOwnerSendButtonDisabled(true);
+      setOwnerSendButtonLabel("Sending...");
 
       void requestOwnerMagicLink(email)
         .then(() => {
+          startOwnerMagicLinkCooldown(60);
           setDashboardStatus(
             "Magic link sent. Open the email and return here to load the dashboard.",
             "success"
@@ -819,6 +885,7 @@ function setupOwnerDashboard() {
         })
         .catch((error) => {
           if (isRateLimitError(error)) {
+            startOwnerMagicLinkCooldown(60);
             setDashboardStatus(
               "Supabase is rate-limiting magic links right now. Wait at least 60 seconds, then try again.",
               "warning"
@@ -826,6 +893,7 @@ function setupOwnerDashboard() {
             return;
           }
 
+          clearOwnerMagicLinkCooldown();
           setDashboardStatus(
             "Could not send the magic link. Recheck your Supabase Auth email settings and redirect URL.",
             "warning"
