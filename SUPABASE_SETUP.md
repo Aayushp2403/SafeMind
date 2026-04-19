@@ -4,11 +4,13 @@
 
 Create a project at [supabase.com](https://supabase.com/).
 
-## 2. Add the ratings table and policies
+## 2. Add the ratings table and functions
 
 Open the Supabase SQL editor and run [supabase-setup.sql](/Users/aayushpatel/Desktop/Projects/SafeMind/supabase-setup.sql) after replacing:
 
 - `REPLACE_WITH_OWNER_EMAIL` with the email address that should be allowed to view the owner dashboard
+
+If you already ran an older version of the SQL, run the updated file again. It replaces the direct table upsert flow with a secure RPC write path for ratings.
 
 ## 3. Configure Auth redirect URLs
 
@@ -43,4 +45,5 @@ After signing in through the email link, the dashboard loads the saved rating su
 ## Notes
 
 - This setup stores one anonymous rating per browser/device using a local visitor ID.
+- Supabase magic-link emails are rate limited. If you see `429 Too Many Requests`, wait at least 60 seconds before requesting another email.
 - Because visitors submit ratings directly from the browser, someone determined could still spam ratings with many devices or cleared storage. If you later want, we can add hCaptcha or Turnstile to reduce abuse.

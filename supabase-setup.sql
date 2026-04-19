@@ -28,39 +28,39 @@ execute function public.set_site_rating_updated_at();
 alter table public.site_ratings enable row level security;
 
 drop policy if exists "Anyone can insert site ratings" on public.site_ratings;
-create policy "Anyone can insert site ratings"
-on public.site_ratings
-for insert
-to anon, authenticated
-with check (
-  char_length(visitor_id) between 8 and 120
-  and rating between 1 and 5
-);
-
 drop policy if exists "Anyone can update site ratings" on public.site_ratings;
-create policy "Anyone can update site ratings"
-on public.site_ratings
-for update
-to anon, authenticated
-using (true)
-with check (
-  char_length(visitor_id) between 8 and 120
-  and rating between 1 and 5
-);
-
 drop policy if exists "Owner can read site ratings" on public.site_ratings;
-create policy "Owner can read site ratings"
-on public.site_ratings
-for select
-to authenticated
-using (
-  coalesce(auth.jwt() ->> 'email', '') = 'aayushpatel2403@gmail.com'
-);
+
+create or replace function public.submit_site_rating(
+  input_visitor_id text,
+  input_rating smallint
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if char_length(coalesce(input_visitor_id, '')) not between 8 and 120 then
+    raise exception 'invalid visitor id';
+  end if;
+
+  if input_rating not between 1 and 5 then
+    raise exception 'invalid rating';
+  end if;
+
+  insert into public.site_ratings (visitor_id, rating)
+  values (input_visitor_id, input_rating)
+  on conflict (visitor_id)
+  do update
+    set rating = excluded.rating;
+end;
+$$;
 
 create or replace function public.get_site_rating_summary()
 returns jsonb
 language plpgsql
-security invoker
+security definer
 set search_path = public
 as $$
 declare
@@ -70,7 +70,7 @@ declare
   average_rating numeric(3, 1);
   last_updated timestamptz;
 begin
-  if coalesce(auth.jwt() ->> 'email', '') <> 'aayushpatel2403@gmail.com' then
+  if coalesce(auth.jwt() ->> 'email', '') <> 'REPLACE_WITH_OWNER_EMAIL' then
     raise exception 'unauthorized';
   end if;
 
@@ -126,8 +126,10 @@ end;
 $$;
 
 grant usage on schema public to anon, authenticated;
-grant insert, update on public.site_ratings to anon, authenticated;
-grant select on public.site_ratings to authenticated;
+revoke all on public.site_ratings from anon, authenticated;
+
+revoke all on function public.submit_site_rating(text, smallint) from public;
+grant execute on function public.submit_site_rating(text, smallint) to anon, authenticated;
 
 revoke all on function public.get_site_rating_summary() from public;
 grant execute on function public.get_site_rating_summary() to authenticated;

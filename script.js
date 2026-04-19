@@ -360,15 +360,10 @@ async function submitRating(rating) {
     throw new Error("Feedback storage is not configured.");
   }
 
-  const { error } = await client.from("site_ratings").upsert(
-    {
-      visitor_id: ensureVisitorId(),
-      rating,
-    },
-    {
-      onConflict: "visitor_id",
-    }
-  );
+  const { error } = await client.rpc("submit_site_rating", {
+    input_visitor_id: ensureVisitorId(),
+    input_rating: rating,
+  });
 
   if (error) {
     throw error;
@@ -687,6 +682,20 @@ async function requestOwnerMagicLink(email) {
   }
 }
 
+function isRateLimitError(error) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const status = "status" in error ? Number(error.status) : null;
+  const message =
+    "message" in error && typeof error.message === "string"
+      ? error.message
+      : "";
+
+  return status === 429 || /too many requests|rate limit/i.test(message);
+}
+
 async function signOutOwner() {
   const client = getSupabaseClient();
 
@@ -808,7 +817,15 @@ function setupOwnerDashboard() {
             "success"
           );
         })
-        .catch(() => {
+        .catch((error) => {
+          if (isRateLimitError(error)) {
+            setDashboardStatus(
+              "Supabase is rate-limiting magic links right now. Wait at least 60 seconds, then try again.",
+              "warning"
+            );
+            return;
+          }
+
           setDashboardStatus(
             "Could not send the magic link. Recheck your Supabase Auth email settings and redirect URL.",
             "warning"
